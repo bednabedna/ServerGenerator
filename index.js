@@ -1,18 +1,20 @@
 
-if(process.argv.length !== 4) {
-	console.error("Usage: server <xmlConfigsPath> <outputPath>");
+if(process.argv.length !== 3) {
+	console.error("Usage: server <xmlConfigsPath>");
 	process.exit(-1);
 }
 
-initializeApp(process.argv[2], process.argv[3]);
+initializeApp(process.argv[2]);
 
 
-function initializeApp(xmlConfigsPath, outputPath) {
+function initializeApp(xmlConfigsPath) {
 
 	const libxml = require("libxmljs");
 	const fs = require("fs-extra");
 	const path = require("path");
 	const express = require('express');
+
+	const outputPath = path.dirname(xmlConfigsPath);
 
 	function resolvePath(p) {
 		return path.join(outputPath, p);
