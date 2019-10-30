@@ -10,7 +10,7 @@ const checkRequestVariables = require("./checkRequestVariables");
 const generateApi = require("./apiGenerator");
 const {generatePreErrorHandlerCode, generateErrorHandlerCode} = require("./onError");
 
-const GENERATED_ROUTER_FOLDER = "./generated-routes/";
+const GENERATED_ROUTER_FOLDER = path.join(__dirname, "../generated-routes/");
 
 let routeCount = 0;
 
