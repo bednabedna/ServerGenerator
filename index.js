@@ -163,12 +163,15 @@ function initializeApp(xmlConfigsPath) {
 		/**
 		 * Execute queries and SQL scripts
 		 */
-		for(let queryOrFile of xmlConfigs.find("/app/database/sqlQuery | /app/database/sqlScript")) {
+		for(let queryOrFile of xmlConfigs.find("/app/database/dbQuery | /app/database/dbScript")) {
 			let queryText = "";
-			if(queryOrFile.name() === "sqlScript")
-				queryText = fs.readFileSync(resolvePath(queryOrFile.text()));
-			else
+			let name = queryOrFile.name();
+			if(name === "dbScript")
+				queryText = fs.readFileSync(resolvePath(queryOrFile.text()), "utf-8");
+			else if(name === "dbQuery")
 				queryText = queryOrFile.text();
+			else
+				throw "invalid child " + name + " for database";
 			db.query(queryText);
 		}
 	}
