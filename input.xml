@@ -1,0 +1,75 @@
+<app name="test-server" locale="it">
+
+	<server port="8080"/>
+
+	<database name="dodoquote_dev" host="localhost" port="5432">
+		<credentials user="dev" password="f4389yf83yf8h8wh"/>
+	</database>
+
+	<viewEngine name="ejs" folder="/views"/>
+
+	<publicFolder virtualFolder="/" realFolder="/public"/>
+
+	<routes apiFolder="/public/js">
+		<!-- LIST USERS -->
+		<route type="get" url="/users">
+			<view name="users/list">
+				<users><dbQuery>select * from Users</dbQuery></users>
+			</view>
+		</route>
+		<!-- NEW USER -->
+		<route type="get" url="/users/new">
+			<view name="users/new"/>
+		</route>
+
+		<!-- DELETE USER -->
+		<route type="get" url="/users/:id/delete">
+			<dbQuery>delete from Users where id = <param>id</param></dbQuery>
+			<redirect>/users</redirect>
+			<onError><redirect>/users</redirect></onError>
+		</route>
+
+		<!-- CREATE USER -->
+		<route type="post" url="/users/create">
+
+			<check>
+				<object from="body">
+					<integer name="id" min="0"/>
+					<email name="email" min="5" max="50"/>
+					<string name="password" min="8" max="30" pattern="[^\w]" patternError="password dovrebbe contenere almeno un carattere speciale."/>
+					<string name="conferma password" min="8" max="30" check="@body.password === this" checkError="la password non coincide con la conferma della password."/>
+				</object>
+			</check>
+
+			<dbQuery>
+				insert into Users values
+				(<body>id</body>,<body>email</body>,<body>password</body>)
+			</dbQuery>
+
+			<redirect>/users</redirect>
+
+			<onError category="database" name="users_email_key">
+				<status>400</status>
+				<view name="users/new">
+					<errmsg><string>email esistente.</string></errmsg>
+					<id><body>id</body></id>
+					<email><body>email</body></email>
+					<password><body>password</body></password>
+					<confirmPassword><body>conferma password</body></confirmPassword>
+				</view>
+			</onError>
+
+			<onError>
+				<status>400</status>
+				<view name="users/new">
+					<errmsg><error>error</error></errmsg>
+					<id><body>id</body></id>
+					<email><body>email</body></email>
+					<password><body>password</body></password>
+					<confirmPassword><body>conferma password</body></confirmPassword>
+				</view>
+			</onError>
+		</route>
+	</routes>
+
+</app>
