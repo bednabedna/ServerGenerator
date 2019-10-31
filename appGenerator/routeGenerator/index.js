@@ -22,15 +22,15 @@ async function generateRoutes(xmlConfigs, outputpath) {
 	let result = 'const router = require("express").Router();\n';
 
 	if(routesXml.get(".//login | .//logout | .//authenticate"))
-		result += 'const authentication = require("../../authentication");\n';
+		result += 'const authentication = require("../../libs/authentication");\n';
 
 	if(routesXml.get(".//dbQuery"))
-		result += 'const db = require("../../db");\n';
+		result += 'const db = require("../../libs/db");\n';
 
 	if(routesXml.get(".//email[not(ancestor::check | ancestor::view)]")) {
 		if(!routesXml.get("/app/emails"))
 			throw "cannot send email without mailer configuration";
-		result += 'const emails = require("../../emails");\n';
+		result += 'const emails = require("../../libs/emails");\n';
 	}
 
 	result += emailRegexConstCode(routesXml);

@@ -12,7 +12,6 @@ async function generateIndexCode(xmlConfigs, outputpath) {
 
 	const string = JSON.stringify;
 
-
 	code(`
 	const express = require('express');
 
@@ -95,7 +94,7 @@ async function generateIndexCode(xmlConfigs, outputpath) {
 			/**
 			 * Configure and use Passport for authentication
 			 */
-			const authentication = require('../../authentication');
+			const authentication = require('../../libs/authentication');
 
 			
 
@@ -131,7 +130,7 @@ async function generateIndexCode(xmlConfigs, outputpath) {
 		let dbName = xmlConfigs.get("string(/app/database/@name)");
 
 		code(`
-		const db = require('../../db');
+		const db = require('../../libs/db');
 
 		let dbConfig = {
 			name:      ${string(dbName)},
@@ -158,15 +157,15 @@ async function generateIndexCode(xmlConfigs, outputpath) {
 			 * Execute queries and SQL scripts
 			 */
 	  		for(let queryOrFile of scriptsAndQueries) {
-	  			let queryText = "";
+	  			let querytext = "";
 	  			let name = queryOrFile.name();
 	  			if(name === "dbScript")
-	  				queryText = fs.readFileSync(path.join(outputpath, queryOrFile.text()), "utf-8");
+	  				querytext = fs.readFileSync(path.join(outputpath, queryOrFile.text()), "utf-8");
 	  			else if(name === "dbQuery")
-	  				queryText = queryOrFile.text();
+	  				querytext = queryOrFile.text();
 	  			else
 	  				throw "invalid child " + name + " for database";
-	  			code(`db.query(${string(queryText)});\n`);
+	  			code(`db.query(${string(querytext)});\n`);
 	  		}
 	  	}
 	}
@@ -176,7 +175,7 @@ async function generateIndexCode(xmlConfigs, outputpath) {
 		 * Initialize email system
 		 */
 		code(`
-		const emails = require("../../emails");
+		const emails = require("../../libs/emails");
 		const mailer = require("express-mailer");
 		const emailAddress = ${string(xmlConfigs.get("string(/app/emails/credentials/@address)"))};
 

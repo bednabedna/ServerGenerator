@@ -17,14 +17,47 @@ const GEN_INDEX_PATH = path.join(GEN_APP_FOLDER, "index.js");
 const GEN_ROTUER_PATH = path.join(GEN_APP_FOLDER, "router.js");
 
 /*
- * Check if Config Xml was modified, if not skip app generation
+ * Check which files must be updated
  */
-Promise.all([
-	fs.stat(GEN_ROTUER_PATH),
-	fs.stat(XML_CONFIG_PATH)
-])
+
+let indexWasModified = true, routerWasModified = true;
+
+const NOTHING = 0, INDEX = 1 << 0, ROUTER = 1 << 1;
+
+let needsUpdate = ~NOTHING;
+
+const matches = (x, y) => (x & y) > 0;
+
+let files = [
+	{path: GEN_INDEX_PATH,  modifies: NOTHING},
+	{path: GEN_ROTUER_PATH, modifies: NOTHING},
+	{path: XML_CONFIG_PATH, modifies: INDEX | ROUTER},
+	...XML_CONFIGS.find("/app/database/dbScript").map(e => ({path: e.text(), modifies: INDEX}))
+];
+
+Promise.all(
+	files.map(file =>
+		fs.stat(file.path)
+		.then(stat => ({mt: stat.mtimeMs, modifies: file.modifies}))
+	)
+)
 .then(result => {
-	if(result[0].mtimeMs >= result[1].mtimeMs) {
+	const indexMt = result[0].mt;
+	const routerMt = result[1].mt;
+
+	needsUpdate = NOTHING;
+
+	for(let file of result) {
+		if(
+			(matches(file.modifies, INDEX) && file.mt > indexMt) ||
+			(matches(file.modifies, ROUTER) && file.mt > routerMt)
+		)
+			needsUpdate = needsUpdate | file.modifies;
+	}
+
+	fs.writeFileSync("./debug.json", JSON.stringify(a))
+
+	if(needsUpdate === NOTHING) {
 		process.stdout.write(GEN_INDEX_PATH);
 		process.exit(0);
 	}
@@ -50,13 +83,28 @@ console.assert(!XML_CONFIGS.find("//dbQuery").length || XML_CONFIGS.get("/app/da
  */
 let locale = require("./locale").setLanguage(XML_CONFIGS.get("string(/app/@locale)") || "en");
 
+/*
+ * Generate app files
+ */
+
 fs.ensureDir(GEN_APP_FOLDER)
-.then(() => Promise.all([
-	generateIndex(XML_CONFIGS, OUTPUT_FOLDER)
-	.then(generatedIndex => fs.writeFile(GEN_INDEX_PATH, beautifyJs(generatedIndex))),
-	generateRoutes(XML_CONFIGS, OUTPUT_FOLDER)
-	.then(generatedRoutes => fs.writeFile(GEN_ROTUER_PATH, beautifyJs(generatedRoutes)))
-]))
+.then(() => {
+	let promises = [];
+
+	if(matches(needsUpdate, INDEX))
+		promises.push(
+			generateIndex(XML_CONFIGS, OUTPUT_FOLDER)
+			.then(generatedIndex => fs.writeFile(GEN_INDEX_PATH, beautifyJs(generatedIndex)))
+		);
+
+	if(matches(needsUpdate, ROUTER))
+		promises.push(
+			generateRoutes(XML_CONFIGS, OUTPUT_FOLDER)
+			.then(generatedRoutes => fs.writeFile(GEN_ROTUER_PATH, beautifyJs(generatedRoutes)))
+		);
+
+	return Promise.all(promises);
+})
 .then(() => {
 	process.stdout.write(GEN_INDEX_PATH);
 })
