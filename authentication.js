@@ -3,7 +3,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const db = require('./db');
 const bcrypt = require('bcrypt');
 
-passport.setLocalStrategy = function(modelName="users", usernameFields=["username"], passwordField="password", serializeField) {
+passport.setLocalStrategy = function(language="en", modelName="users", usernameFields=["username"], passwordField="password", serializeField) {
   console.assert(Array.isArray(usernameFields) && usernameFields.length, "usernameFields must be a non empty array");
 
   serializeField = serializeField || usernameFields[0];
@@ -21,7 +21,22 @@ passport.setLocalStrategy = function(modelName="users", usernameFields=["usernam
      });
   });
 
-  const locale = require("./locale").getLocale();
+  const locale = ({
+      "en": {
+        incorrectUsername: (fields) => fields + " doesn't exist.",
+        incorrectPassword: () => "incorrect password.",
+        of: () => " of ",
+        in: () => " in ",
+        or: () => " or ",
+      },
+      "it": {
+        incorrectUsername: (fields) => fields + " non esiste.",
+        incorrectPassword: () => "la password non è corretta.",
+        of: () => " di ",
+        in: () => " in ",
+        or: () => " o ",
+      },
+    })[language];
 
   const or = locale.or();
   const incorrectUsernameError = locale.incorrectUsername(usernameFields.join(or));

@@ -1,49 +1,36 @@
 module.exports = generateRoutes;
 
-const fs = require("fs-extra");
 const path = require("path");
+
 const optGen = require("./optionsGenerator");
 const utils = require("./utils");
 const {generateDbQueryCode,	generateQueryFragmentsVar} = require("./dbQuery");
 const {generateCheckCode, emailRegexConstCode} = require("./check");
 const checkRequestVariables = require("./checkRequestVariables");
-const generateApi = require("./apiGenerator");
+//const generateApi = require("./apiGenerator");
 const {generatePreErrorHandlerCode, generateErrorHandlerCode} = require("./onError");
 
-const GENERATED_ROUTER_FOLDER = path.join(__dirname, "../generated-routes/");
-
-let routeCount = 0;
-
-function generateRoutes(routesXml, beautify, resolvePath) {
-
-	// delete old routes or create folder for routes
-	try {
-		let oldFiles = fs.readdirSync(GENERATED_ROUTER_FOLDER);
-
-		for(let file of oldFiles)
-			fs.unlinkSync(GENERATED_ROUTER_FOLDER + file);
-	} catch(e) {
-		fs.mkdirSync(GENERATED_ROUTER_FOLDER);
-	}
-
+async function generateRoutes(xmlConfigs, outputpath) {
 	// generate api script
 	//generateApi(routesXml, beautify, resolvePath);
 
 	// generate router script
+	let routesXml = xmlConfigs.get("/app/routes");
+
 	let routes = routesXml.find("./route | ./router");
 
 	let result = 'const router = require("express").Router();\n';
 
 	if(routesXml.get(".//login | .//logout | .//authenticate"))
-		result += 'const authentication = require("../authentication");\n';
+		result += 'const authentication = require("../../authentication");\n';
 
 	if(routesXml.get(".//dbQuery"))
-		result += 'const db = require("../db");\n';
+		result += 'const db = require("../../db");\n';
 
 	if(routesXml.get(".//email[not(ancestor::check | ancestor::view)]")) {
 		if(!routesXml.get("/app/emails"))
 			throw "cannot send email without mailer configuration";
-		result += 'const emails = require("../emails");\n';
+		result += 'const emails = require("../../emails");\n';
 	}
 
 	result += emailRegexConstCode(routesXml);
@@ -67,16 +54,7 @@ function generateRoutes(routesXml, beautify, resolvePath) {
 		else
 			result += generateRouterCode(route, "/");
 
-	if(beautify) {
-		const beautifyJs = require("js-beautify").js;
-		result = beautifyJs(result);
-	}
-
-	// generate router file
-	const ROUTES_PATH = GENERATED_ROUTER_FOLDER + routesXml.get("string(/app/@name)") + ".js";
-	fs.writeFileSync(ROUTES_PATH, result);
-	console.log("generated " + routeCount + " routes.");
-	return ROUTES_PATH;
+	return result;
 }
 
 function generateRouterCode(router, urlPrefix) {
@@ -164,8 +142,6 @@ function generateRouteCode(route, urlPrefix) {
 	}`;
 
 	let url = path.join(urlPrefix, route.get("string(./@url)")).replace(/\\/g, "/");
-
-	routeCount += 1;
 
 	return `router${utils.asAccessor(route.get("string(./@type)"))}(${JSON.stringify(url)}, ${callback});\n\n`;
 }
