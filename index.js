@@ -1,5 +1,5 @@
 if(process.argv.length !== 3) {
-	console.error("Usage: server <XML_CONFIGSPath>");
+	console.error("Usage: server <XML_CONFIGS_FILE>");
 	process.exit(-1);
 }
 
