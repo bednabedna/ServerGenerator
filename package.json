@@ -13,7 +13,7 @@
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.4",
     "ejs": "^2.7.1",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "express-session": "^1.17.0",
     "fs-extra": "^8.1.0",
     "js-beautify": "^1.10.2",
